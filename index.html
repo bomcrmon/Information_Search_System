@@ -348,7 +348,7 @@ const aliasLists = {
   "vendor name": ["vendor name","vendor","supplier name","supplier"],
   "brand": ["brand","manufacturer"],
   "supplier description": ["description","item description","supplier description"],
-  "unit price": ["unit price","price","unit cost","Unit Price (THB)","Unit Price (THB) global contract"],
+  "unit price": ["unit price","price","unit cost","unit price (thb)","unit price (thb) global contract","unit price thb global contract"],
   "lead time": ["lead time","delivery time"],
   "start date": ["start date","effective date","start"],
   "end date": ["end date","expiry date","expire date","valid to"],
@@ -363,7 +363,7 @@ const standardColumns = [
 ];
 
 /* Helpers */
-function norm(s){ return String(s||"").toLowerCase().replace(/[.\-_,]/g,"").trim(); }
+function norm(s){ return String(s||"").toLowerCase().replace(/[\n\r.\-_,()]/g,"").trim(); }
 
 function matchHeader(h){
     const key = norm(h);
@@ -465,6 +465,8 @@ function processSheet(name, rows){
         if(std) headerMap[std] = h;
         else headerMap[norm(h)] = h;
     });
+    
+    console.log("Sheet:", name, "Headers:", headers);
 
     rows.forEach(row=>{
         const obj = {};
