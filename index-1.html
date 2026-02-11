@@ -313,7 +313,6 @@
         #dataFile {
             display: none;
             /* ซ่อน input file ของ browser */
-            /* display: none; ลบออกเพื่อให้แสดงผลแบบปกติ */
         }
 
         .file-name {
@@ -442,6 +441,51 @@
             box-shadow: 0 8px 20px rgba(0, 102, 255, 0.35);
             /* เงาเพิ่ม */
         }
+
+        .custom-file-btn {
+            border: none;
+            /* เอาเส้นขอบออก */
+            padding: 8px 18px;
+            /* ระยะภายในปุ่ม */
+            border-radius: 10px;
+            /* มุมโค้ง */
+            font-size: 15px;
+            /* ขนาดตัวอักษร */
+            cursor: pointer;
+            /* เปลี่ยนเป็นมือเมื่อ hover */
+            display: flex;
+            /* จัด icon + text ในแนวนอน */
+            align-items: center;
+            /* จัดแนวตั้งอยู่กลาง */
+            gap: 6px;
+            /* ระยะห่างไอคอน */
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+            /* เงาปุ่ม */
+            transition: 0.25s;
+            /* ลื่นไหลตอน hover */
+            color: #fff;
+            /* ตัวอักษรสีขาว */
+
+            /* สีเริ่มต้น → แดง (ยังไม่เลือกไฟล์) */
+            background: linear-gradient(135deg, #ff4b4b, #e00000);
+        }
+
+        .custom-file-btn:hover {
+            background: linear-gradient(135deg, #f73333, #ff0000);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 14px rgba(0, 0, 0, 0.22);
+        }
+
+        .custom-file-btn.loaded {
+            /* เปลี่ยนเป็นสีเขียวหลังเลือกไฟล์ */
+            background: linear-gradient(135deg, #28a745, #1e7e34);
+        }
+
+        /* Hover effect — ใช้กับทั้งสีแดงและสีเขียว */
+        .custom-file-btn:hover {
+            transform: translateY(-2px);
+            /* ยกขึ้นเล็กน้อยตอน hover */
+        }
     </style>
 </head>
 
@@ -456,8 +500,12 @@
                     <span class="material-icons">attach_file</span>
                     File Source
                 </label>
-                <div class="input-icon">
-                    <span id="fileName" style=" display: inline-block; color: #087f3a; font-weight: 500;"></span>
+                <div class="custom-file-wrapper">
+                    <button type="button" class="custom-file-btn" id="btnSelectFile">
+                        <span class="material-icons">upload_file</span> Choose File
+                    </button>
+                    <span class="file-name" id="fileName">No file selected.</span>
+                    <input type="file" id="dataFile" accept=".csv,.xlsx,.xls">
                 </div>
             </div>
             <div>
@@ -636,6 +684,7 @@
                     processSheet('GoogleSheet', res.data); 
                     setGStatus('ok','Loaded'); showOverlay(false); 
                     document.getElementById('fileName').textContent = "E-Catalog 2026.xlsx (Google Sheet)";
+                    document.getElementById('btnSelectFile').classList.add('loaded');
                 }, error:(err)=>{ setGStatus('error',err.message); alert(err.message); showOverlay(false); }});
             }).catch(err=>{ setGStatus('error',err.message); alert('Error loading Google Sheet: '+err.message); showOverlay(false); });
         }
@@ -655,6 +704,35 @@
                 try{
                     loadGoogleSheetFromUrl(AUTO_GSHEET_URL);
                 }catch(e){ console.warn('Auto load failed', e); setGStatus('error','Auto-load failed'); }
+            }
+        });
+
+        /* File loader */
+        document.getElementById("dataFile").addEventListener("change", e => {
+            const file = e.target.files[0];
+            if (!file) return;
+            showOverlay(true);
+            allData = [];
+
+            const ext = file.name.split(".").pop().toLowerCase();
+            if (ext === "csv") {
+                Papa.parse(file, {
+                    header: true,
+                    skipEmptyLines: true,
+                    complete: (res) => { processSheet("CSV", res.data); showOverlay(false); },
+                    error: (err) => { alert(err.message); showOverlay(false); }
+                });
+            } else {
+                const r = new FileReader();
+                r.onload = evt => {
+                    const wb = XLSX.read(evt.target.result, { type: "array" });
+                    wb.SheetNames.forEach(name => {
+                        const rows = XLSX.utils.sheet_to_json(wb.Sheets[name], { defval: "", raw: false });
+                        processSheet(name, rows);
+                    });
+                    showOverlay(false);
+                };
+                r.readAsArrayBuffer(file);
             }
         });
 
@@ -796,6 +874,24 @@
             html += "</tbody></table></div>";
             out.innerHTML = html;
         }
+
+        // ปุ่มสั่งให้ input file เปิด dialog
+        document.getElementById("btnSelectFile").addEventListener("click", () => {
+            document.getElementById("dataFile").click();
+        });
+
+        document.getElementById("dataFile").addEventListener("change", function () {
+            const fileLabel = document.getElementById("fileName");
+            const btn = document.getElementById("btnSelectFile");
+
+            if (this.files.length > 0) {
+                fileLabel.textContent = this.files[0].name;
+                btn.classList.add("loaded");   // เปลี่ยนเป็นสีเขียว
+            } else {
+                fileLabel.textContent = "No file selected";
+                btn.classList.remove("loaded"); // กลับเป็นสีแดง
+            }
+        });
 
     </script>
 
