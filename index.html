@@ -291,12 +291,14 @@
         .td-desc {
             text-align: left;
             /* ชิดซ้ายเพื่อความอ่านง่าย */
-            white-space: nowrap;
-            /* ไม่ให้ข้อความขึ้นบรรทัดใหม่ */
-            overflow: hidden;
-            /* ซ่อนข้อความที่ล้นกรอบ */
-            text-overflow: ellipsis;
-            /* แสดง ... เมื่อข้อความยาวเกิน */
+        }
+
+        /* สำหรับคอลัมน์ที่ต้องการให้ข้อความตัดขึ้นบรรทัดใหม่เมื่อยาวเกิน */
+        td:nth-child(1), /* Vendor Name */
+        td:nth-child(4), /* Brand */
+        .td-desc /* Supplier Description */ {
+            white-space: normal;
+            word-break: break-word;
         }
 
         .custom-file-wrapper {
@@ -323,8 +325,7 @@
             /* จำกัดความกว้าง */
             white-space: nowrap;
             /* ไม่ขึ้นบรรทัดใหม่ */
-            overflow: visible;
-            /*ให้เนื้อหาที่ล้นกรอบแสดงทั้งหมด*/
+            overflow: hidden;
             text-overflow: ellipsis;
             /* แสดง ... เมื่อยาวเกิน */
         }
@@ -491,21 +492,22 @@
 <body>
     <div class="container">
         <h2><span class="material-symbols-outlined">document_search</span> Information Search System</h2>
-        <div class="form-group">
-            <!-- <label>Select File (.CSV/.XLSX):</label> -->
-            <label>File : </label><span class="file-name" id="fileName">E-Catalog 2026.xlsx</span>
-
-            <div class="custom-file-wrapper">
-                <input type="file" id="dataFile" accept=".csv,.xlsx,.xls">
-                <!-- <button type="button" class="custom-file-btn" id="btnSelectFile">
-                    <span class="material-icons">upload_file</span> Choose File
-                </button> -->
-                
-            </div>
-        </div>
         <div id="gsStatus" class="gs-status">Status: idle</div>
 
         <div class="search-grid" style="margin-bottom: 20px;">
+            <div>
+                <label>
+                    <span class="material-icons">attach_file</span>
+                    File Source
+                </label>
+                <div class="custom-file-wrapper">
+                    <button type="button" class="custom-file-btn" id="btnSelectFile">
+                        <span class="material-icons">upload_file</span> Choose File
+                    </button>
+                    <span class="file-name" id="fileName">No file selected.</span>
+                    <input type="file" id="dataFile" accept=".csv,.xlsx,.xls">
+                </div>
+            </div>
             <div>
                 <label>
                     <span class="material-icons">store</span>
@@ -677,7 +679,13 @@
                 if(!r.ok) throw new Error('Failed to fetch sheet. It may not be public.');
                 return r.text();
             }).then(text=>{
-                Papa.parse(text,{header:true,skipEmptyLines:true,complete:(res)=>{ allData = []; processSheet('GoogleSheet', res.data); setGStatus('ok','Loaded'); showOverlay(false); }, error:(err)=>{ setGStatus('error',err.message); alert(err.message); showOverlay(false); }});
+                Papa.parse(text,{header:true,skipEmptyLines:true,complete:(res)=>{ 
+                    allData = []; 
+                    processSheet('GoogleSheet', res.data); 
+                    setGStatus('ok','Loaded'); showOverlay(false); 
+                    document.getElementById('fileName').textContent = "E-Catalog 2026.xlsx (Google Sheet)";
+                    document.getElementById('btnSelectFile').classList.add('loaded');
+                }, error:(err)=>{ setGStatus('error',err.message); alert(err.message); showOverlay(false); }});
             }).catch(err=>{ setGStatus('error',err.message); alert('Error loading Google Sheet: '+err.message); showOverlay(false); });
         }
         
